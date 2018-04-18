@@ -1,6 +1,6 @@
 ## Storing compressed images in SQLite with python
 
-I am working on a project that requires working with a large number of images of galaxies. While a million files is something easily handled by the linux file system it can be problematic to manage. For instance,  in order to transfer the full image catalog (~ 2GB) it has to be packed into a zip or tar file, which takes a long time (but much less than a direct transfer of individual files). Also,  in the case of distributed file systems like those used in Big Data applications a very large set of small (a few Kb) files is a worst case scenario.
+I was working on a project that requires working with a large number of images of galaxies. While a million files is something easily handled by the linux file system it can be problematic to manage. For instance,  in order to transfer the full image catalog (~ 2GB) it has to be packed into a zip or tar file, which takes a long time (but much less than a direct transfer of individual files). Also, in the case of distributed file systems like those used in Big Data frameworks like HTFS a very large set of small (a few Kb) files is a worst case scenario.
 
 One solution that so far works well is storing the images in an SQLite database. I found lots of information on the web about this problem but all where partial solutions. So as a reminder to myself, and hoping that this may be useful to other people, this is my end-to-end solution.
 
