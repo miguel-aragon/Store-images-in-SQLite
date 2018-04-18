@@ -1,14 +1,14 @@
 ## Storing compressed images in SQLite with python
 
-I was working on a project that requires working with a large number of images of galaxies. While a million files is something easily handled by the linux file system it can be problematic to manage. For instance,  in order to transfer the full image catalog (~ 2GB) it has to be packed into a zip or tar file, which takes a long time (but much less than a direct transfer of individual files). Also, in the case of distributed file systems like those used in Big Data frameworks like HTFS a very large set of small (a few Kb) files is a worst case scenario.
+I was working on a project that requires working with a large number of images of galaxies. While a million files is something easily handled by the linux file system it can be problematic to manage. I wanted a solution that was easy to mange and transfer. Also, in the case of distributed file systems like those used in Big Data frameworks such as Hadoop's HDFS a very large set of small (a few Kb) files is a quite bad scenario.
 
 One solution that so far works well is storing the images in an SQLite database. I found lots of information on the web about this problem but all where partial solutions. So as a reminder to myself, and hoping that this may be useful to other people, this is my end-to-end solution.
 
-SQLite  lets us store all the images in one single database file (this as far as I know is not the case for other databases) and even in RAM. while allowing us fast operations on the individual images.  According to  this paper data stored in blobs can be accessed %30 faster than a file system (although the study is old).
+SQLite  lets us store all the images in one single database file (this as far as I know is not the case for all databases) and even in RAM. while allowing us fast operations on the individual images.  According to [this study](https://arxiv.org/pdf/cs/0701168.pdf) data stored in blobs can be accessed %30 faster than a file system (although the study is old).
 
-The key idea here is to store the compressed (encoded) images as raw binary blobs in the database and then decode them as needed. This saves both disk space and reading time.
+The key idea here is to store the compressed (encoded) images as raw binary blobs in the database and then decode them as needed. It is important to store their compressed version to save both disk space and reading/writing time.
 
-Below is a code that takes all the jpg files in a folder and stores them in a SQLite database (the actual code I use reads from another database to extract file names and properties of the galaxies).
+Below is a code that takes all the .jpg files in a folder and stores them in a SQLite database (the actual code I use reads from another database to extract file names and properties of the galaxies).
 
 ```python
 import os
@@ -47,7 +47,7 @@ filename_db = 'DR7_IMAGES.db'
 create_db(filename_db)
 ```
 
-Now we iterate over the files, read theis raw content in binary format and inset them in a table.
+Now we iterate over the files, read their raw content in binary format and insert them in a table.
 
 ```python
 #--- Open database and loop over files to insert in database
@@ -89,19 +89,21 @@ with open(file_i, 'rb') as f:
    f.close()
 ```
 
-I wanted to store the image size so I had to “decode” the blob. This step is not neccesary if you just want to store the images as in a file system. The first line converts the string into a byte (uint8 or unsigned char) numpy array. The second line does the magic of decoding the raw bytes into an image. It actually decompresses the jpg data:
+I wanted to store the image size too, so I had to “decode” the blob. This step is not neccesary if you just want to store the images as in a file system. The first line converts the string into a byte (uint8 or unsigned char) numpy array. The second line does the magic of decoding the raw bytes into an image. It actually decompresses the jpg data:
 
 ```python
 nparr = np.fromstring(image_bytes, np.uint8)
 img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 ```
 
-Some websites show how to passe the blob using a buffer. I am instead passing the image blob using a SQLite function, I don’t know which way is better. I suppose using sqlite3 own functions leads to more maintainable code (or not…).
-
+Some websites show how to manage the blob using a buffer. I am instead passing the image blob using a SQLite function, I don’t know which way is better. I suppose using sqlite3's own functions leads to more maintainable code.
 
 ```python
 sqlite3.Binary(image_bytes)
 ```
+
+So this is all you need to store images in compressed format inside an SQLite database. Of course the code can be used for other binary datasets.
+
 Finally we read some images from the database.
 
 ```python
