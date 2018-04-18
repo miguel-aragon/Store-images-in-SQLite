@@ -96,7 +96,7 @@ nparr = np.fromstring(image_bytes, np.uint8)
 img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 ```
 
-I saw a few websites where the blob was passed using a buffer. I am instead passing the image blob using a SQLite function, I don’t know which way is better. I suppose using sqlite3 own functions leads to more maintainable code (or not…).
+Some websites show how to passe the blob using a buffer. I am instead passing the image blob using a SQLite function, I don’t know which way is better. I suppose using sqlite3 own functions leads to more maintainable code (or not…).
 
 
 ```python
