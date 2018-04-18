@@ -47,5 +47,81 @@ filename_db = 'DR7_IMAGES.db'
 create_db(filename_db)
 ```
 
+Now we iterate over the files, read theis raw content in binary format and inset them in a table.
 
+```python
+#--- Open database and loop over files to insert in database
+con = sqlite3.connect(filename_db)
+cur = con.cursor()
+for i, file_i in enumerate(files):
+ 
+    #--- Read image as a binary blob
+    with open(file_i, 'rb') as f:
+        image_bytes = f.read()
+    f.close()
+ 
+    #--- Decode raw bytes to get image size
+    nparr  = np.fromstring(image_bytes, np.uint8)
+    img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    image_size = img_np.shape[1]
+ 
+    #--- Extract file name without extension
+    filename = os.path.relpath(file_i, PATH)
+    objid = int(os.path.splitext(filename)[0])
+ 
+    #--- Insert image and data into table
+    cur.execute("insert into Images VALUES(?,?,?)", (objid,sqlite3.Binary(image_bytes),image_size)   )
+    con.commit()
+ 
+    #--- Cheap progress
+    if ((i % 100) == 0):
+        print(i, n_files)
+ 
+cur.close()
+con.close()
+```
+
+Note the code that reads the image as a binary blob:
+
+```python
+with open(file_i, 'rb') as f:
+   image_bytes = f.read()
+   f.close()
+```
+
+I wanted to store the image size so I had to “decode” the blob. This step is not neccesary if you just want to store the images as in a file system. The first line converts the string into a byte (uint8 or unsigned char) numpy array. The second line does the magic of decoding the raw bytes into an image. It actually decompresses the jpg data:
+
+```python
+nparr = np.fromstring(image_bytes, np.uint8)
+img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+```
+
+I saw a few websites where the blob was passed using a buffer. I am instead passing the image blob using a SQLite function, I don’t know which way is better. I suppose using sqlite3 own functions leads to more maintainable code (or not…).
+
+
+```python
+sqlite3.Binary(image_bytes)
+```
+Finally we read some images from the database.
+
+```python
+con = sqlite3.connect(filename_db)
+cur = con.cursor()
+row = cur.execute("SELECT ObjId, img from Images")
+for ObjId, item in row:
+ 
+    #--- Decode blob
+    nparr  = np.fromstring(item, np.uint8)
+    img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+ 
+    #--- Display image
+    cv2.imshow('image',img_np)
+    k = cv2.waitKey(0)
+    if k == 27:         # wait for ESC key to exit
+        cv2.destroyAllWindows()
+        break
+ 
+cur.close()
+con.close()
+```
 
